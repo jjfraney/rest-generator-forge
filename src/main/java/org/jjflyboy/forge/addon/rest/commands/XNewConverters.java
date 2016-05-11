@@ -4,6 +4,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import org.jboss.forge.addon.javaee.JavaEEPackageConstants;
 import org.jboss.forge.addon.parser.java.beans.ProjectOperations;
 import org.jboss.forge.addon.parser.java.converters.PackageRootConverter;
 import org.jboss.forge.addon.parser.java.facets.JavaSourceFacet;
@@ -17,8 +18,6 @@ import org.jboss.forge.addon.ui.context.UIBuilder;
 import org.jboss.forge.addon.ui.context.UIContext;
 import org.jboss.forge.addon.ui.context.UIExecutionContext;
 import org.jboss.forge.addon.ui.context.UISelection;
-import org.jboss.forge.addon.ui.context.UIValidationContext;
-import org.jboss.forge.addon.ui.facets.HintsFacet;
 import org.jboss.forge.addon.ui.hints.InputType;
 import org.jboss.forge.addon.ui.input.UIInput;
 import org.jboss.forge.addon.ui.input.UISelectOne;
@@ -35,20 +34,16 @@ import org.jboss.forge.roaster.model.source.PropertySource;
 public class XNewConverters extends AbstractProjectCommand {
 
 	@Inject
-	@WithAttributes(label = "sourcePojo", required = true)
-	private UISelectOne<JavaResource> sourcePojo;
-
-	@Inject
-	@WithAttributes(label = "named", required = true)
-	private UIInput<String> named;
-
-	@Inject
-	@WithAttributes(type = InputType.JAVA_PACKAGE_PICKER, label = "target package", required = false)
-	private UIInput<String> targetPackage;
+	@WithAttributes(label = "source", required = true)
+	private UISelectOne<JavaResource> source;
 
 	@Inject
 	@WithAttributes(name = "converter", label = "create converter?", defaultValue = "true")
 	private UIInput<Boolean> createConverter;
+
+	@Inject
+	@WithAttributes(type = InputType.JAVA_PACKAGE_PICKER, label = "target package", required = false)
+	private UIInput<String> targetPackage;
 
 	@Inject
 	private ProjectOperations projectOperations;
@@ -60,10 +55,9 @@ public class XNewConverters extends AbstractProjectCommand {
 
 	@Override
 	public void initializeUI(UIBuilder builder) throws Exception {
-		targetPackage.getFacet(HintsFacet.class).setInputType(InputType.JAVA_PACKAGE_PICKER);
 		targetPackage.setValueConverter(new PackageRootConverter(getProjectFactory(), builder));
-		setupPojo(sourcePojo, builder.getUIContext());
-		builder.add(sourcePojo).add(named).add(targetPackage).add(createConverter);
+		setupPojo(source, builder.getUIContext());
+		builder.add(source).add(createConverter).add(targetPackage);
 	}
 
 	@Override
@@ -72,13 +66,15 @@ public class XNewConverters extends AbstractProjectCommand {
 		// if the target.named does not exist, create it
 		UIContext uiContext = context.getUIContext();
 		Project project = getSelectedProject(uiContext);
+
 		JavaSourceFacet javaSourceFacet = project.getFacet(JavaSourceFacet.class);
-		JavaClassSource source = buildJavaSource(javaSourceFacet);
+		JavaClassSource entityClass = source.getValue().getJavaType();
+		JavaClassSource rrc = createResourceRepresentationClass(entityClass, javaSourceFacet);
 
 		JavaResource newClassSource;
 		boolean classAlreadyExists;
 		try {
-			newClassSource = javaSourceFacet.getJavaResource(source);
+			newClassSource = javaSourceFacet.getJavaResource(rrc);
 			classAlreadyExists = newClassSource != null && newClassSource.exists();
 		} catch (ResourceException ex) {
 			classAlreadyExists = false;
@@ -86,37 +82,42 @@ public class XNewConverters extends AbstractProjectCommand {
 
 		if (!classAlreadyExists) {
 
-			JavaClassSource targetClass = sourcePojo.getValue().getJavaType();
-			for (PropertySource<JavaClassSource> p : targetClass.getProperties()) {
-				source.addProperty(p.getType().getName(), p.getName());
+			for (PropertySource<JavaClassSource> p : entityClass.getProperties()) {
+				rrc.addProperty(p.getType().getName(), p.getName());
 			}
-			newClassSource = javaSourceFacet.saveJavaSource(source);
+			newClassSource = javaSourceFacet.saveJavaSource(rrc);
 
 		}
 
-		return Results.success(source.getQualifiedName() + " was " + (classAlreadyExists ? "preserved" : "created"));
+		return Results.success(rrc.getQualifiedName() + " was " + (classAlreadyExists ? "preserved" : "created"));
 
 	}
 
-	private JavaClassSource buildJavaSource(JavaSourceFacet java) {
-		if (!named.hasValue() && !named.hasDefaultValue()) {
-			return null;
-		}
+	/**
+	 * create resource representation where package name is same as entity,
+	 * where entity package is replaced with rest package, and RR is at tail of
+	 * resource representation class name
+	 *
+	 * @param javaResource
+	 * @param java
+	 * @return
+	 */
+	private JavaClassSource createResourceRepresentationClass(JavaClassSource javaResource, JavaSourceFacet java) {
+		String targetPackage = getTargetRestPackage(javaResource, java);
 
-		JavaClassSource source = Roaster.create(JavaClassSource.class).setName(named.getValue());
-
-		if (targetPackage.hasValue() || targetPackage.hasDefaultValue()) {
-			source.setPackage(targetPackage.getValue());
-		} else {
-			source.setPackage(java.getBasePackage());
-		}
+		JavaClassSource source = Roaster.create(JavaClassSource.class).setName(javaResource.getName() + "RR");
+		source.setPackage(targetPackage);
 		return source;
 	}
 
-	@Override
-	public void validate(UIValidationContext validator) {
-		// TODO: implement or remove (placeholding)
-		super.validate(validator);
+	private String getTargetRestPackage(JavaClassSource javaResource, JavaSourceFacet java) {
+		String tp = targetPackage.getValue();
+		if (tp == null) {
+			String entityPackage = java.getBasePackage() + "." + JavaEEPackageConstants.DEFAULT_ENTITY_PACKAGE;
+			String restPackage = java.getBasePackage() + "." + JavaEEPackageConstants.DEFAULT_REST_PACKAGE;
+			tp = javaResource.getPackage().replace(entityPackage, restPackage);
+		}
+		return tp;
 	}
 
 	private void setupPojo(UISelectOne<JavaResource> pojo, UIContext context) {
