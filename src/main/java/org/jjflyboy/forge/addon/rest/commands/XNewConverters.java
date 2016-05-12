@@ -28,6 +28,7 @@ import org.jboss.forge.addon.ui.result.Results;
 import org.jboss.forge.addon.ui.util.Categories;
 import org.jboss.forge.addon.ui.util.Metadata;
 import org.jboss.forge.roaster.Roaster;
+import org.jboss.forge.roaster.model.Type;
 import org.jboss.forge.roaster.model.source.JavaClassSource;
 import org.jboss.forge.roaster.model.source.PropertySource;
 
@@ -83,14 +84,32 @@ public class XNewConverters extends AbstractProjectCommand {
 		if (!classAlreadyExists) {
 
 			for (PropertySource<JavaClassSource> p : entityClass.getProperties()) {
-				rrc.addProperty(p.getType().getName(), p.getName());
+				String type = stringifyType(p.getType(), project);
+				rrc.addProperty(type, p.getName());
 			}
 			newClassSource = javaSourceFacet.saveJavaSource(rrc);
 
 		}
 
 		return Results.success(rrc.getQualifiedName() + " was " + (classAlreadyExists ? "preserved" : "created"));
+	}
 
+	private String stringifyType(Type<JavaClassSource> type, Project project) {
+		StringBuilder b = new StringBuilder();
+		if (type.isParameterized()) {
+			b.append(type.getName()).append('<');
+			String sep = "";
+			for (Type<JavaClassSource> t : type.getTypeArguments()) {
+				String tname = stringifyType(t, project);
+				b.append(sep).append(tname);
+			}
+			b.append('>');
+		} else if (type.getQualifiedName().startsWith(project.getFacet(JavaSourceFacet.class).getBasePackage())) {
+			b.append(type.getName() + "Reference");
+		} else {
+			b.append(type.getName());
+		}
+		return b.toString();
 	}
 
 	/**
