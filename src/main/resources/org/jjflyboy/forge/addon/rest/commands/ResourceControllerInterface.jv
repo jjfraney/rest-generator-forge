@@ -1,0 +1,8 @@
+package ${targetPackage};
+
+interface I${resourceName}ResourceController extends I${resourceName}ResourceClass, I${resourceName}ResourcesClass {
+	/*
+	 * methods here do not have to be implemented in ${resourceName}ResourceClass,
+	 * and this interface prevents an @Inject ambiguity.
+	 */
+}

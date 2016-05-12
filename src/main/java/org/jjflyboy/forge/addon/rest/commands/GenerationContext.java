@@ -10,7 +10,7 @@ public class GenerationContext {
 	private Project project;
 	private JavaClassSource rrClass;
 	private String targetPackageName;
-	private List<String> contentType;
+	private List<String> contentTypes;
 	private String resourcePath;
 	private String resourceName;
 
@@ -40,12 +40,12 @@ public class GenerationContext {
 		this.targetPackageName = targetPackageName;
 	}
 
-	public List<String> getContentType() {
-		return contentType;
+	public List<String> getContentTypes() {
+		return contentTypes;
 	}
 
-	public void setContentType(List<String> contentType) {
-		this.contentType = contentType;
+	public void setContentTypes(List<String> contentType) {
+		this.contentTypes = contentType;
 	}
 
 	public Inflector getInflector() {

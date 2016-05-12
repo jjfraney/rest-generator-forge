@@ -12,6 +12,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.ws.rs.core.MediaType;
@@ -55,7 +56,7 @@ public class RestResourceClassFromPojoCommand extends AbstractProjectCommand imp
 {
 	@Inject
 	@WithAttributes(label = "Content Type", defaultValue = MediaType.APPLICATION_JSON, required = true)
-	private UIInputMany<String> contentType;
+	private UIInputMany<String> contentTypes;
 
 	@Inject
 	@WithAttributes(label = "Targets", required = true)
@@ -103,7 +104,7 @@ public class RestResourceClassFromPojoCommand extends AbstractProjectCommand imp
 
 		packageName.setDefaultValue(project.getFacet(JavaSourceFacet.class).getBasePackage() + ".rest");
 
-		contentType.setCompleter(
+		contentTypes.setCompleter(
 				(uiContext, input, value) -> Arrays.asList(MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON));
 		generator.setDefaultValue(defaultResourceGenerator);
 		if (context.getProvider().isGUI())
@@ -118,7 +119,7 @@ public class RestResourceClassFromPojoCommand extends AbstractProjectCommand imp
 
 		builder.add(targets)
 		.add(generator)
-		.add(contentType)
+		.add(contentTypes)
 		.add(packageName)
 		.add(overwrite);
 	}
@@ -161,13 +162,26 @@ public class RestResourceClassFromPojoCommand extends AbstractProjectCommand imp
 		for (JavaResource target : targets.getValue())
 		{
 			context.setRrClass(target.getJavaType());
-			context.setResourceName(target.getJavaType().getName().replaceAll("RR$", ""));
-			context.setResourcePath("ResourcePathTODO");
+
+			String resourceName = target.getJavaType().getName().replaceAll("RR$", "");
+			context.setResourceName(resourceName);
+
+			String resourcePath = hyphenate(inflector.pluralize(context.getResourceName()));
+			context.setResourcePath(resourcePath);
+
 			JavaInterfaceSource resourceClassInterface = selectedGenerator.generateResourceClassInterfaceFrom(context);
 			classes.add(resourceClassInterface);
 
+			JavaInterfaceSource resourcesClassInterface = selectedGenerator
+					.generateResourcesClassInterfaceFrom(context);
+			classes.add(resourcesClassInterface);
+
 			JavaClassSource resourceClass = selectedGenerator.generateResourceClassFrom(context);
 			classes.add(resourceClass);
+
+			JavaInterfaceSource controllerInterface = selectedGenerator
+					.generateResourceControllerInterfaceFrom(context);
+			classes.add(controllerInterface);
 
 			JavaClassSource controllerClass = selectedGenerator.generateResourceControllerFrom(context);
 			classes.add(controllerClass);
@@ -179,7 +193,16 @@ public class RestResourceClassFromPojoCommand extends AbstractProjectCommand imp
 	{
 		GenerationContext generationContext = new GenerationContext();
 		generationContext.setProject(getSelectedProject(context));
-		generationContext.setContentType(Lists.toList(contentType.getValue()));
+
+		List<String> ct = Lists.toList(contentTypes.getValue())
+				.stream()
+				.map((s) -> {
+					// double quotes if not present
+					return s.startsWith("\"") ? s : "\"" + s + "\"";
+				})
+				.collect(Collectors.toList());
+
+		generationContext.setContentTypes(ct);
 		generationContext.setTargetPackageName(packageName.getValue());
 		generationContext.setInflector(inflector);
 		return generationContext;
@@ -211,6 +234,24 @@ public class RestResourceClassFromPojoCommand extends AbstractProjectCommand imp
 	@Override
 	protected ProjectFactory getProjectFactory() {
 		return projectFactory;
+	}
+
+	/**
+	 * convert a camelcase name to a hyphenated compound: camelCaseWord ->
+	 * camel-case-word
+	 *
+	 * @param camelCaseWord
+	 * @return
+	 */
+	private String hyphenate(String camelCaseWord) {
+		if (camelCaseWord == null)
+			return null;
+		String result = camelCaseWord.trim();
+		if (result.length() == 0)
+			return "";
+		result = result.replaceAll("([A-Z]+)([A-Z][a-z])", "$1-$2");
+		result = result.replaceAll("([a-z\\d])([A-Z])", "$1-$2");
+		return result.toLowerCase();
 	}
 
 }

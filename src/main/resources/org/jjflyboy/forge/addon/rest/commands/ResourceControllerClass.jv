@@ -1,4 +1,33 @@
-public class ${resourceName}ResourceController implements I${resourceName}ResourceClass {
-	void create(${resourceRepresentation.name} rro) {
+package ${targetPackage};
+
+import javax.ws.rs.core.Response;
+
+import ${resourceRepresentation.qualifiedName};
+
+public class ${resourceName}ResourceController implements I${resourceName}ResourceController {
+
+ 	@Override
+	public Response create(${resourceRepresentation.name} rro) {
+		return null;
+	}
+
+ 	@Override
+	public Response getByBusinessKey(String businessKey) {
+		return null;
+	}
+
+ 	@Override
+	public Response removeByBusinessKey(String businessKey) {
+		return null;
+	}
+
+ 	@Override
+	public Response update(String businessKey, ${resourceRepresentation.name} rro) {
+		return null;
+	}
+
+ 	@Override
+	public Response getAll() {
+		return null;
 	}
 }

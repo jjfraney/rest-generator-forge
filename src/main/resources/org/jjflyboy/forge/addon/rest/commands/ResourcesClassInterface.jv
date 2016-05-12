@@ -1,0 +1,7 @@
+package ${targetPackage};
+
+import javax.ws.rs.core.Response;
+
+interface I${resourceName}ResourcesClass {
+	Response getAll();
+}

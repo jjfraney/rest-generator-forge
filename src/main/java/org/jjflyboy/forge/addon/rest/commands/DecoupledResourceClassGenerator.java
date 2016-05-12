@@ -40,12 +40,7 @@ public class DecoupledResourceClassGenerator implements ResourceClassGenerator {
 		Resource<URL> templateResource = resourceFactory.create(getClass().getResource(template));
 		Template processor = templateFactory.create(templateResource, FreemarkerTemplate.class);
 		String output = processor.process(map);
-		T resource = Roaster.parse(c, output);
-		resource.setPackage(context.getTargetPackageName());
-		if (!context.getRrClass().getPackage().equals(context.getTargetPackageName())) {
-			resource.addImport(context.getRrClass());
-		}
-		return resource;
+		return Roaster.parse(c, output);
 	}
 
 
@@ -53,8 +48,9 @@ public class DecoupledResourceClassGenerator implements ResourceClassGenerator {
 		Map<Object, Object> map = new HashMap<>();
 		map.put("resourceName", context.getResourceName());
 		map.put("resourceRepresentation", context.getRrClass());
-		map.put("contentType", context.getContentType());
+		map.put("contentTypes", context.getContentTypes());
 		map.put("resourcePath", context.getResourcePath());
+		map.put("targetPackage", context.getTargetPackageName());
 		return map;
 	}
 
@@ -71,6 +67,16 @@ public class DecoupledResourceClassGenerator implements ResourceClassGenerator {
 	@Override
 	public JavaClassSource generateResourceControllerFrom(GenerationContext context) throws Exception {
 		return applyTemplateWithContext(JavaClassSource.class, "ResourceControllerClass.jv", context);
+	}
+
+	@Override
+	public JavaInterfaceSource generateResourceControllerInterfaceFrom(GenerationContext context) throws Exception {
+		return applyTemplateWithContext(JavaInterfaceSource.class, "ResourceControllerInterface.jv", context);
+	}
+
+	@Override
+	public JavaInterfaceSource generateResourcesClassInterfaceFrom(GenerationContext context) throws Exception {
+		return applyTemplateWithContext(JavaInterfaceSource.class, "ResourcesClassInterface.jv", context);
 	}
 
 }
