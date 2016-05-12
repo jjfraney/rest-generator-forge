@@ -1,0 +1,4 @@
+public class ${resourceName}ResourceController implements I${resourceName}ResourceClass {
+	void create(${resourceRepresentation.name} rro) {
+	}
+}
