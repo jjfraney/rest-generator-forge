@@ -102,8 +102,10 @@ public class ${resourceName}ResourceController implements I${resourceName}Resour
 		return response;
 	}
 
+	// add get methods returning lists to I${resourceName}ResourcesClass
+	
  	@Override
-	public Response getAll() {
+	public Response getAll(Integer startPosition, Integer maxResult) {
 		// TODO: logic to find 'matching' domain model objects
 		// TODO: conversion: domain model object to external RRO
 		return Response.status(Status.OK).entity(Collections.emptyList()).build();
