@@ -18,7 +18,7 @@ public class ${resourceName}ResourceClass implements I${resourceName}ResourceCla
 
 	@Inject
 	private I${resourceName}ResourceController resourceController;
-	
+
 	@GET
 	@Path("{id}")
  	@Produces({${contentTypes?join(", ")}})
@@ -26,28 +26,28 @@ public class ${resourceName}ResourceClass implements I${resourceName}ResourceCla
 	public Response getByBusinessKey(@PathParam("id") String businessKey) {
 		return resourceController.getByBusinessKey(businessKey);
 	}
-	
+
 	@GET
 	@Override
 	@Produces({${contentTypes?join(", ")}})
 	public Response getAll() {
 		return resourceController.getAll();
 	}
-	
+
 	@POST
  	@Override
 	@Consumes({${contentTypes?join(", ")}})
 	public Response create(${resourceRepresentation.name} rro) {
 		return resourceController.create(rro);
 	}
-	
+
 	@DELETE
 	@Path("{id}")
  	@Override
 	public Response removeByBusinessKey(@PathParam("id") String businessKey) {
 		return resourceController.removeByBusinessKey(businessKey);
 	}
-	
+
 	@PUT
 	@Path("{id}")
 	@Consumes({${contentTypes?join(", ")}})
@@ -56,3 +56,4 @@ public class ${resourceName}ResourceClass implements I${resourceName}ResourceCla
 		return resourceController.update(businessKey, rro);
 	}
 }
+
