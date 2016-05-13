@@ -7,6 +7,7 @@
 
 package org.jjflyboy.forge.addon.rest.commands;
 
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -34,6 +35,7 @@ import org.jboss.forge.addon.ui.command.PrerequisiteCommandsProvider;
 import org.jboss.forge.addon.ui.context.UIBuilder;
 import org.jboss.forge.addon.ui.context.UIContext;
 import org.jboss.forge.addon.ui.context.UIExecutionContext;
+import org.jboss.forge.addon.ui.context.UIValidationContext;
 import org.jboss.forge.addon.ui.hints.InputType;
 import org.jboss.forge.addon.ui.input.UIInput;
 import org.jboss.forge.addon.ui.input.UIInputMany;
@@ -73,8 +75,8 @@ public class RestResourceClassFromPojoCommand extends AbstractProjectCommand imp
 	private UIInput<String> packageName;
 
 	@Inject
-	@WithAttributes(label = "Overwrite existing classes?", enabled = false, defaultValue = "false")
-	private UIInput<Boolean> overwrite;
+	@WithAttributes(label = "Property name of targets' id property", required = false)
+	private UIInput<String> idPropertyName;
 
 	@Inject
 	@WithAttributes(label = "Generator", required = true)
@@ -126,7 +128,7 @@ public class RestResourceClassFromPojoCommand extends AbstractProjectCommand imp
 		.add(generator)
 		.add(contentTypes)
 		.add(packageName)
-		.add(overwrite);
+		.add(idPropertyName);
 	}
 
 	private void setupTargetsSelector(UIContext context) {
@@ -139,6 +141,52 @@ public class RestResourceClassFromPojoCommand extends AbstractProjectCommand imp
 			}
 		}
 		targets.setValueChoices(resourceRepresentationClasses);
+	}
+
+	@Override
+	public void validate(UIValidationContext validator) {
+		super.validate(validator);
+		for (JavaResource t : targets.getValue()) {
+
+			// these ought to be classes (by how we created the filter list)
+			JavaClassSource c;
+			try {
+				c = ((JavaClassSource) t.getJavaType());
+			} catch (FileNotFoundException e) {
+				validator.addValidationError(targets, "Java source file not found. " + t.getFullyQualifiedName());
+				continue;
+			}
+
+			String idName = idPropertyName.getValue();
+			if(idName != null) {
+				if(c.getProperty(idName) == null) {
+					String message = new StringBuilder()
+							.append("id property does not exist in the target class.")
+							.append("  id property name=").append(idName)
+							.append(", target RR class=").append(c.getName())
+							.toString();
+					validator.addValidationError(idPropertyName, message);
+				}
+			} else {
+				boolean keyFound = false;
+				for(String key: keyPossibilities(getResourceNameFrom(c))) {
+					PropertySource<JavaClassSource> property = c.getProperty(key);
+					if(property != null) {
+						if (property.isMutable() && property.isAccessible()) {
+							keyFound = true;
+							break;
+						}
+					}
+				}
+				if(! keyFound) {
+					String message = new StringBuilder()
+							.append("target class does not have guessable id property.")
+							.append(" target class=").append(c.getName())
+							.toString();
+					validator.addValidationWarning(targets, message);
+				}
+			}
+		}
 	}
 
 	@Override
@@ -167,7 +215,7 @@ public class RestResourceClassFromPojoCommand extends AbstractProjectCommand imp
 		for (JavaResource target : targets.getValue())
 		{
 			context.setRrClass(target.getJavaType());
-			String resourceName = target.getJavaType().getName().replaceAll("RR$", "");
+			String resourceName = getResourceNameFrom(target.getJavaType());
 
 			Map<String, PropertySource<JavaClassSource>> map = buildPropertyMap(target.getJavaType());
 			String keyName = inferKeyName(resourceName, map);
@@ -201,11 +249,15 @@ public class RestResourceClassFromPojoCommand extends AbstractProjectCommand imp
 		return classes;
 	}
 
+	private String getResourceNameFrom(JavaType<?> javaType) {
+		return javaType.getName().replaceAll("RR$", "");
+	}
+
 	private String[] keyPossibilities(String resourceName) {
 		String resourceId = new StringBuilder().append(Character.toLowerCase(resourceName.charAt(0)))
 				.append(resourceName.substring(1)).append("Id").toString();
 
-		return new String[] { "businessKey", "naturalId", "businessId", resourceId, "id", "name" };
+		return new String[] { "businessKey", "naturalId", "guid", "businessId", resourceId, "id" };
 	}
 
 	private String inferKeyName(String resourceName, Map<String, PropertySource<JavaClassSource>> propertyMap) {
