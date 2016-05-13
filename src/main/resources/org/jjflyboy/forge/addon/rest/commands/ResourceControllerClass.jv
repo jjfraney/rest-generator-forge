@@ -1,6 +1,11 @@
 package ${targetPackage};
 
+import java.net.URI;
+import java.util.Collections;
+
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import javax.ws.rs.core.UriBuilder;
 
 import ${resourceRepresentation.qualifiedName};
 
@@ -8,26 +13,99 @@ public class ${resourceName}ResourceController implements I${resourceName}Resour
 
  	@Override
 	public Response create(${resourceRepresentation.name} rro) {
-		return null;
+		// TODO: domain model logic to create the domain model object
+
+		// TODO: conversion: domain model object to external RRO
+
+		// TODO: replace getBusinessKey to whatever id getter on the RRO.
+		URI uri = UriBuilder.fromResource(${resourceName}ResourceClass.class).path(rro.getBusinessKey().toString()).build();
+		return Response.created(uri).build();
 	}
 
  	@Override
 	public Response getByBusinessKey(String businessKey) {
-		return null;
+		// businessKey is the the pathparam 'id' as in '${resourceName}/{id}'
+
+		Response response;
+
+		// TODO: implement domain logic to find by this business key
+		boolean found = false;
+
+		// working, simple, thin, sample domain logic:
+		if(found) {
+			// TODO: conversion: domain model object to external RRO
+			// TODO: replace setBusinessKey to whatever id setter on the RRO.
+			${resourceRepresentation.name} rro = new ${resourceRepresentation.name}();
+			rro.setBusinessKey(businessKey);
+
+			response = Response.ok(rro).build();
+		} else {
+			response = Response.status(Status.NOT_FOUND).build();
+		}
+		return response;
 	}
 
  	@Override
 	public Response removeByBusinessKey(String businessKey) {
-		return null;
+		// businessKey is the the pathparam 'id' as in '${resourceName}/{id}'
+
+		Response response;
+
+		// TODO: domain logic to find by this business key
+		boolean found = false;
+
+		// working, simple, thin, sample domain logic:
+		if(found) {
+			// TODO: domain logic to remove domain object
+
+			response = Response.noContent().build();
+		} else {
+			response = Response.status(Status.NOT_FOUND).build();
+		}
+		return response;
 	}
 
  	@Override
-	public Response update(String businessKey, ${resourceRepresentation.name} rro) {
-		return null;
+	public Response update(String businessKey, ${resourceRepresentation.name} rroUpdate) {
+		// businessKey is the the pathparam 'id' as in '${resourceName}/{id}'
+
+		Response response;
+
+		// TODO: implement domain logic to find by this business key
+		boolean found = false;
+
+		// working, simple, thin, sample domain logic:
+		if(found) {
+
+			// TODO: modify the domain model object from the rroUpdate object
+	
+			// if an optimistic lock violation
+			boolean optimisticLockViolation = false;
+			if(optimisticLockViolation) {
+				// try to return the original.
+
+				// TODO: need the original domain model object (maybe from the find above).
+				// TODO: conversion: original domain model object to external RRO
+				${resourceRepresentation.name} original = null;
+				response = Response.status(Response.Status.CONFLICT).entity(original).build();
+			} else {
+				// TODO: conversion: updated domain model object to external RRO
+				${resourceRepresentation.name} rro = new ${resourceRepresentation.name}();
+				rro.setBusinessKey(businessKey);
+
+				// return successful update
+				response = Response.ok(rro).build();
+			}
+		} else {
+			response = Response.status(Status.NOT_FOUND).build();
+		}
+		return response;
 	}
 
  	@Override
 	public Response getAll() {
-		return null;
+		// TODO: logic to find 'matching' domain model objects
+		// TODO: conversion: domain model object to external RRO
+		return Response.status(Status.OK).entity(Collections.emptyList()).build();
 	}
 }
