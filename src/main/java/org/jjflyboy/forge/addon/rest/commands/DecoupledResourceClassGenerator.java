@@ -46,12 +46,23 @@ public class DecoupledResourceClassGenerator implements ResourceClassGenerator {
 
 	private Map<Object, Object> populateTemplateContext(GenerationContext context) {
 		Map<Object, Object> map = new HashMap<>();
-		map.put("resourceName", context.getResourceName());
+		map.put("resourceName", capitalize(context.getResourceName()));
 		map.put("resourceRepresentation", context.getRrClass());
 		map.put("contentTypes", context.getContentTypes());
 		map.put("resourcePath", context.getResourcePath());
 		map.put("targetPackage", context.getTargetPackageName());
+
+		map.put("keyPropertyName",
+				context.getKeyProperty() == null ? "BusinessKey" : capitalize(context.getKeyProperty().getName()));
+		map.put("keyPropertyType",
+				context.getKeyProperty() == null ? "String" : context.getKeyProperty().getType().getName());
+		map.put("keyProperty", context.getKeyProperty());
+		map.put("keyName", context.getKeyName());
 		return map;
+	}
+
+	private String capitalize(String name) {
+		return new StringBuilder().append(Character.toUpperCase(name.charAt(0))).append(name.substring(1)).toString();
 	}
 
 	@Override

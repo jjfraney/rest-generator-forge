@@ -17,26 +17,23 @@ public class ${resourceName}ResourceController implements I${resourceName}Resour
 
 		// TODO: conversion: domain model object to external RRO
 
-		// TODO: replace getBusinessKey to whatever id getter on the RRO.
-		URI uri = UriBuilder.fromResource(${resourceName}ResourceClass.class).path(rro.getBusinessKey().toString()).build();
+		URI uri = UriBuilder.fromResource(${resourceName}ResourceClass.class).path(rro.get${keyPropertyName}().toString()).build();
 		return Response.created(uri).build();
 	}
 
  	@Override
-	public Response getByBusinessKey(String businessKey) {
-		// businessKey is the the pathparam 'id' as in '${resourceName}/{id}'
-
+	public Response getBy${keyPropertyName}(${keyPropertyType} ${keyName}) {
+		
 		Response response;
 
-		// TODO: implement domain logic to find by this business key
+		// TODO: implement domain logic to find by this ${keyName}
 		boolean found = false;
 
 		// working, simple, thin, sample domain logic:
 		if(found) {
 			// TODO: conversion: domain model object to external RRO
-			// TODO: replace setBusinessKey to whatever id setter on the RRO.
 			${resourceRepresentation.name} rro = new ${resourceRepresentation.name}();
-			rro.setBusinessKey(businessKey);
+			rro.set${keyPropertyName}(${keyName});
 
 			response = Response.ok(rro).build();
 		} else {
@@ -46,12 +43,11 @@ public class ${resourceName}ResourceController implements I${resourceName}Resour
 	}
 
  	@Override
-	public Response removeByBusinessKey(String businessKey) {
-		// businessKey is the the pathparam 'id' as in '${resourceName}/{id}'
+	public Response removeBy${keyPropertyName}(${keyPropertyType} ${keyName}) {
 
 		Response response;
 
-		// TODO: domain logic to find by this business key
+		// TODO: domain logic to find by this ${keyName}
 		boolean found = false;
 
 		// working, simple, thin, sample domain logic:
@@ -66,12 +62,11 @@ public class ${resourceName}ResourceController implements I${resourceName}Resour
 	}
 
  	@Override
-	public Response update(String businessKey, ${resourceRepresentation.name} rroUpdate) {
-		// businessKey is the the pathparam 'id' as in '${resourceName}/{id}'
+	public Response update(${keyPropertyType} ${keyName}, ${resourceRepresentation.name} rro) {
 
 		Response response;
 
-		// TODO: implement domain logic to find by this business key
+		// TODO: implement domain logic to find by this ${keyName}
 		boolean found = false;
 
 		// working, simple, thin, sample domain logic:
@@ -90,11 +85,11 @@ public class ${resourceName}ResourceController implements I${resourceName}Resour
 				response = Response.status(Response.Status.CONFLICT).entity(original).build();
 			} else {
 				// TODO: conversion: updated domain model object to external RRO
-				${resourceRepresentation.name} rro = new ${resourceRepresentation.name}();
-				rro.setBusinessKey(businessKey);
+				${resourceRepresentation.name} updated = new ${resourceRepresentation.name}();
+				updated.set${keyPropertyName}(${keyName});
 
 				// return successful update
-				response = Response.ok(rro).build();
+				response = Response.ok(updated).build();
 			}
 		} else {
 			response = Response.status(Status.NOT_FOUND).build();

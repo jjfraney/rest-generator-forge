@@ -5,10 +5,13 @@ import java.util.List;
 import org.jboss.forge.addon.projects.Project;
 import org.jboss.forge.addon.text.Inflector;
 import org.jboss.forge.roaster.model.source.JavaClassSource;
+import org.jboss.forge.roaster.model.source.PropertySource;
 
 public class GenerationContext {
 	private Project project;
 	private JavaClassSource rrClass;
+	private String keyName;
+	private PropertySource<JavaClassSource> keyProperty;
 	private String targetPackageName;
 	private List<String> contentTypes;
 	private String resourcePath;
@@ -70,6 +73,22 @@ public class GenerationContext {
 
 	public void setResourceName(String resourceName) {
 		this.resourceName = resourceName;
+	}
+
+	public String getKeyName() {
+		return keyName;
+	}
+
+	public void setKeyName(String keyName) {
+		this.keyName = keyName;
+	}
+
+	public PropertySource<JavaClassSource> getKeyProperty() {
+		return keyProperty;
+	}
+
+	public void setKeyProperty(PropertySource<JavaClassSource> keyProperty) {
+		this.keyProperty = keyProperty;
 	}
 
 }

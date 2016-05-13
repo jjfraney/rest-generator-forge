@@ -6,7 +6,7 @@ import ${resourceRepresentation.qualifiedName};
 
 interface I${resourceName}ResourceClass {
 	Response create(${resourceRepresentation.name} rro);
-	Response getByBusinessKey(String businessKey);
-	Response removeByBusinessKey(String businessKey);
-	Response update(String businessKey, ${resourceRepresentation.name} rro);
+	Response getBy${keyPropertyName}(${keyPropertyType} ${keyName});
+	Response removeBy${keyPropertyName}(${keyPropertyType} ${keyName});
+	Response update(${keyPropertyType} ${keyName}, ${resourceRepresentation.name} rro);
 }

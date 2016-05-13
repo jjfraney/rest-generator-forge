@@ -9,8 +9,10 @@ package org.jjflyboy.forge.addon.rest.commands;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -46,9 +48,13 @@ import org.jboss.forge.addon.ui.result.navigation.NavigationResultBuilder;
 import org.jboss.forge.addon.ui.util.Categories;
 import org.jboss.forge.addon.ui.util.Metadata;
 import org.jboss.forge.furnace.util.Lists;
+import org.jboss.forge.roaster.model.Annotation;
+import org.jboss.forge.roaster.model.JavaType;
+import org.jboss.forge.roaster.model.ValuePair;
 import org.jboss.forge.roaster.model.source.JavaClassSource;
 import org.jboss.forge.roaster.model.source.JavaInterfaceSource;
 import org.jboss.forge.roaster.model.source.JavaSource;
+import org.jboss.forge.roaster.model.source.PropertySource;
 
 @FacetConstraint(JavaSourceFacet.class)
 @StackConstraint(RestFacet.class)
@@ -92,7 +98,6 @@ public class RestResourceClassFromPojoCommand extends AbstractProjectCommand imp
 				.category(Categories.create(super.getMetadata(context).getCategory(), "JAX-RS"));
 	}
 
-	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Override
 	public void initializeUI(UIBuilder builder) throws Exception
 	{
@@ -162,8 +167,15 @@ public class RestResourceClassFromPojoCommand extends AbstractProjectCommand imp
 		for (JavaResource target : targets.getValue())
 		{
 			context.setRrClass(target.getJavaType());
-
 			String resourceName = target.getJavaType().getName().replaceAll("RR$", "");
+
+			Map<String, PropertySource<JavaClassSource>> map = buildPropertyMap(target.getJavaType());
+			String keyName = inferKeyName(resourceName, map);
+
+			// key name is "id" or inferred key name
+			context.setKeyName(keyName == null ? "id" : keyName);
+			context.setKeyProperty(map.get(keyName));
+
 			context.setResourceName(resourceName);
 
 			String resourcePath = hyphenate(inflector.pluralize(context.getResourceName()));
@@ -187,6 +199,66 @@ public class RestResourceClassFromPojoCommand extends AbstractProjectCommand imp
 			classes.add(controllerClass);
 		}
 		return classes;
+	}
+
+	private String[] keyPossibilities(String resourceName) {
+		String resourceId = new StringBuilder().append(Character.toLowerCase(resourceName.charAt(0)))
+				.append(resourceName.substring(1)).append("Id").toString();
+
+		return new String[] { "businessKey", "naturalId", "businessId", resourceId, "id", "name" };
+	}
+
+	private String inferKeyName(String resourceName, Map<String, PropertySource<JavaClassSource>> propertyMap) {
+		String name = "id";
+
+		// the first that matches is inferred to be the type's business key.
+
+		for (String keyCandidate : keyPossibilities(resourceName)) {
+			PropertySource<JavaClassSource> p = propertyMap.get(keyCandidate);
+			if (p != null) {
+				if (!isJsonIgnored(p)) {
+					name = keyCandidate;
+					break;
+				}
+			}
+		}
+		return name;
+	}
+
+	private Map<String, PropertySource<JavaClassSource>> buildPropertyMap(JavaType<?> javaType) {
+
+		Map<String, PropertySource<JavaClassSource>> map = new HashMap<>();
+		if (javaType instanceof JavaClassSource) {
+			JavaClassSource c = (JavaClassSource) javaType;
+
+			for (PropertySource<JavaClassSource> p : c.getProperties()) {
+				if (!isJsonIgnored(p)) {
+					map.put(jsonPropertyName(p), p);
+				}
+			}
+		}
+		return map;
+	}
+
+	private boolean isJsonIgnored(PropertySource<JavaClassSource> match) {
+		Annotation<JavaClassSource> jsonValue = match.getAnnotation("com.fasterxml.jackson.annotation.JsonIgnore");
+		boolean isIgnored = jsonValue != null;
+		return isIgnored;
+	}
+
+	private String jsonPropertyName(PropertySource<JavaClassSource> p) {
+		String result = p.getName();
+		Annotation<JavaClassSource> a = p.getAnnotation("com.fasterxml.jackson.annotation.JsonProperty");
+		if (a != null) {
+			for (ValuePair pair : a.getValues()) {
+				if (pair.getName().equals("value")) {
+					result = pair.getStringValue();
+					break;
+				}
+			}
+		}
+		return result;
+
 	}
 
 	private GenerationContext createContextFor(final UIContext context)

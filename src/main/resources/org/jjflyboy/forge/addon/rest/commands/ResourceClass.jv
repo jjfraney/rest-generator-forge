@@ -21,11 +21,11 @@ public class ${resourceName}ResourceClass implements I${resourceName}ResourceCla
 	private I${resourceName}ResourceController resourceController;
 
 	@GET
-	@Path("{id}")
+	@Path("{${keyName}}")
  	@Produces({${contentTypes?join(", ")}})
  	@Override
-	public Response getByBusinessKey(@PathParam("id") String businessKey) {
-		return resourceController.getByBusinessKey(businessKey);
+	public Response getBy${keyPropertyName}(@PathParam("${keyName}") ${keyPropertyType} ${keyName}) {
+		return resourceController.getBy${keyPropertyName}(${keyName});
 	}
 
 	@GET
@@ -46,18 +46,18 @@ public class ${resourceName}ResourceClass implements I${resourceName}ResourceCla
 	}
 
 	@DELETE
-	@Path("{id}")
+	@Path("{${keyName}}")
  	@Override
-	public Response removeByBusinessKey(@PathParam("id") String businessKey) {
-		return resourceController.removeByBusinessKey(businessKey);
+	public Response removeBy${keyPropertyName}(@PathParam("${keyName}") ${keyPropertyType} ${keyName}) {
+		return resourceController.removeBy${keyPropertyName}(${keyName});
 	}
 
 	@PUT
-	@Path("{id}")
+	@Path("{${keyName}}")
 	@Consumes({${contentTypes?join(", ")}})
  	@Override
-	public Response update(@PathParam("id") String businessKey, ${resourceRepresentation.name} rro) {
-		return resourceController.update(businessKey, rro);
+	public Response update(@PathParam("${keyName}") ${keyPropertyType} ${keyName}, ${resourceRepresentation.name} rro) {
+		return resourceController.update(${keyName}, rro);
 	}
 }
 
