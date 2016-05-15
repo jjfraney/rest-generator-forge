@@ -52,12 +52,17 @@ public class DecoupledResourceClassGenerator implements ResourceClassGenerator {
 		map.put("resourcePath", context.getResourcePath());
 		map.put("targetPackage", context.getTargetPackageName());
 
-		map.put("keyPropertyName",
-				context.getKeyProperty() == null ? "BusinessKey" : capitalize(context.getKeyProperty().getName()));
-		map.put("keyPropertyType",
-				context.getKeyProperty() == null ? "String" : context.getKeyProperty().getType().getName());
-		map.put("keyProperty", context.getKeyProperty());
-		map.put("keyName", context.getKeyName());
+		map.put("hasIdProperty", context.getKeyName() != null);
+		if (context.getKeyName() != null) {
+			map.put("keyPropertyName", capitalize(context.getKeyProperty().getName()));
+			map.put("keyPropertyType", context.getKeyProperty().getType().getName());
+			map.put("keyProperty", context.getKeyProperty());
+			map.put("keyName", context.getKeyName());
+		}
+		for (RestMethod rm : RestMethod.values()) {
+			String mapKey = "with" + rm.name();
+			map.put(mapKey, context.getMethods().contains(rm));
+		}
 		return map;
 	}
 

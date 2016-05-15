@@ -1,12 +1,12 @@
 package ${targetPackage};
 
-import javax.ws.rs.core.Response;
-
-import ${resourceRepresentation.qualifiedName};
-
+<#if hasIdProperty>import javax.ws.rs.core.Response;
+</#if>
+<#if (withPOST || withPUT)  && hasIdProperty>import ${resourceRepresentation.qualifiedName};
+</#if>
 interface I${resourceName}ResourceClass {
-	Response create(${resourceRepresentation.name} rro);
-	Response getBy${keyPropertyName}(${keyPropertyType} ${keyName});
-	Response removeBy${keyPropertyName}(${keyPropertyType} ${keyName});
-	Response update(${keyPropertyType} ${keyName}, ${resourceRepresentation.name} rro);
-}
+<#if withPOST && hasIdProperty>	Response create(${resourceRepresentation.name} rro);
+</#if><#if withGET && hasIdProperty>	Response getBy${keyPropertyName}(${keyPropertyType} ${keyName});
+</#if><#if withDELETE && hasIdProperty>	Response removeBy${keyPropertyName}(${keyPropertyType} ${keyName});
+</#if><#if withPUT && hasIdProperty>	Response update(${keyPropertyType} ${keyName}, ${resourceRepresentation.name} rro);
+</#if>}

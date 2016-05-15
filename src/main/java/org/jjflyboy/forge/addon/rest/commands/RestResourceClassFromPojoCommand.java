@@ -79,6 +79,10 @@ public class RestResourceClassFromPojoCommand extends AbstractProjectCommand imp
 	private UIInput<String> idPropertyName;
 
 	@Inject
+	@WithAttributes(label = "Methods")
+	private UISelectMany<RestMethod> methods;
+
+	@Inject
 	@WithAttributes(label = "Generator", required = true)
 	private UISelectOne<ResourceClassGenerator> generator;
 
@@ -124,11 +128,15 @@ public class RestResourceClassFromPojoCommand extends AbstractProjectCommand imp
 		}
 		setupTargetsSelector(context);
 
+		methods.setDefaultValue(
+				Arrays.asList(new RestMethod[] { RestMethod.GET, RestMethod.PUT, RestMethod.POST, RestMethod.DELETE }));
+
 		builder.add(targets)
 		.add(generator)
 		.add(contentTypes)
 		.add(packageName)
-		.add(idPropertyName);
+		.add(idPropertyName)
+		.add(methods);
 	}
 
 	private void setupTargetsSelector(UIContext context) {
@@ -168,22 +176,31 @@ public class RestResourceClassFromPojoCommand extends AbstractProjectCommand imp
 					validator.addValidationError(idPropertyName, message);
 				}
 			} else {
-				boolean keyFound = false;
-				for(String key: keyPossibilities(getResourceNameFrom(c))) {
-					PropertySource<JavaClassSource> property = c.getProperty(key);
-					if(property != null) {
-						if (property.isMutable() && property.isAccessible()) {
-							keyFound = true;
-							break;
-						}
-					}
-				}
+				boolean keyFound = inferKeyName(getResourceNameFrom(c), buildPropertyMap(c)) != null;
 				if(! keyFound) {
 					String message = new StringBuilder()
 							.append("target class does not have guessable id property.")
 							.append(" target class=").append(c.getName())
+							.append(" suggestions=").append(Arrays.asList(keyPossibilities(getResourceNameFrom(c))))
 							.toString();
 					validator.addValidationWarning(targets, message);
+				}
+
+				if (!keyFound) {
+					Set<RestMethod> m = new HashSet<>();
+					m.addAll(Lists.toList(methods.getValue()));
+					if (m.contains(RestMethod.POST) || m.contains(RestMethod.DELETE) || m.contains(RestMethod.PUT)) {
+						String message = new StringBuilder()
+								.append("These methods cannot be generated without an id property. ")
+								.append(" methods=")
+								.append(m)
+								.toString();
+						validator.addValidationError(methods, message);
+					}
+					if (m.contains(RestMethod.GET)) {
+						String message = "GET by id cannot be generated without an id property.";
+						validator.addValidationWarning(methods, message);
+					}
 				}
 			}
 		}
@@ -220,9 +237,8 @@ public class RestResourceClassFromPojoCommand extends AbstractProjectCommand imp
 			Map<String, PropertySource<JavaClassSource>> map = buildPropertyMap(target.getJavaType());
 			String keyName = inferKeyName(resourceName, map);
 
-			// key name is "id" or inferred key name
-			context.setKeyName(keyName == null ? "id" : keyName);
-			context.setKeyProperty(map.get(keyName));
+			context.setKeyName(keyName);
+			context.setKeyProperty(keyName == null ? null : map.get(keyName));
 
 			context.setResourceName(resourceName);
 
@@ -261,7 +277,7 @@ public class RestResourceClassFromPojoCommand extends AbstractProjectCommand imp
 	}
 
 	private String inferKeyName(String resourceName, Map<String, PropertySource<JavaClassSource>> propertyMap) {
-		String name = "id";
+		String name = null;
 
 		// the first that matches is inferred to be the type's business key.
 
@@ -284,8 +300,10 @@ public class RestResourceClassFromPojoCommand extends AbstractProjectCommand imp
 			JavaClassSource c = (JavaClassSource) javaType;
 
 			for (PropertySource<JavaClassSource> p : c.getProperties()) {
-				if (!isJsonIgnored(p)) {
-					map.put(jsonPropertyName(p), p);
+				if (p.isMutable() && p.isAccessible()) {
+					if (!isJsonIgnored(p)) {
+						map.put(jsonPropertyName(p), p);
+					}
 				}
 			}
 		}
@@ -329,6 +347,11 @@ public class RestResourceClassFromPojoCommand extends AbstractProjectCommand imp
 		generationContext.setContentTypes(ct);
 		generationContext.setTargetPackageName(packageName.getValue());
 		generationContext.setInflector(inflector);
+
+		Set<RestMethod> m = new HashSet<>();
+		m.addAll(Lists.toList(methods.getValue()));
+		generationContext.setMethods(m);
+
 		return generationContext;
 	}
 

@@ -1,6 +1,7 @@
 package org.jjflyboy.forge.addon.rest.commands;
 
 import java.util.List;
+import java.util.Set;
 
 import org.jboss.forge.addon.projects.Project;
 import org.jboss.forge.addon.text.Inflector;
@@ -16,6 +17,7 @@ public class GenerationContext {
 	private List<String> contentTypes;
 	private String resourcePath;
 	private String resourceName;
+	private Set<RestMethod> methods;
 
 	private Inflector inflector;
 
@@ -89,6 +91,14 @@ public class GenerationContext {
 
 	public void setKeyProperty(PropertySource<JavaClassSource> keyProperty) {
 		this.keyProperty = keyProperty;
+	}
+
+	public Set<RestMethod> getMethods() {
+		return methods;
+	}
+
+	public void setMethods(Set<RestMethod> methods) {
+		this.methods = methods;
 	}
 
 }

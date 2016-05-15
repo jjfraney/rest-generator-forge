@@ -1,4 +1,5 @@
 target
+.freemarker-ide.xml
 .settings
 .project
 .classpath
