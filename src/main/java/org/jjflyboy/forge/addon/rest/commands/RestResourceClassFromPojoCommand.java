@@ -63,15 +63,18 @@ import org.jboss.forge.roaster.model.source.PropertySource;
 public class RestResourceClassFromPojoCommand extends AbstractProjectCommand implements PrerequisiteCommandsProvider
 {
 	@Inject
-	@WithAttributes(label = "Content Type", defaultValue = MediaType.APPLICATION_JSON, required = true)
+	@WithAttributes(label = "Content Type", defaultValue = MediaType.APPLICATION_JSON, required = false)
 	private UIInputMany<String> contentTypes;
 
 	@Inject
-	@WithAttributes(label = "Targets", required = true)
-	private UISelectMany<JavaResource> targets;
+	@WithAttributes(label = "targets", required = true, type = InputType.JAVA_CLASS_PICKER)
+	private UISelectMany<String> targets;
+	// due to forge bug, cannot use: private UISelectMany<JavaResource> targets;
+	// using this map to compensate for the forge bug above
+	private Map<String, JavaResource> targetMap = new HashMap<>();
 
 	@Inject
-	@WithAttributes(label = "Target Package Name", required = true, type = InputType.JAVA_PACKAGE_PICKER)
+	@WithAttributes(label = "Target Package Name", required = false, type = InputType.JAVA_PACKAGE_PICKER)
 	private UIInput<String> packageName;
 
 	@Inject
@@ -79,11 +82,11 @@ public class RestResourceClassFromPojoCommand extends AbstractProjectCommand imp
 	private UIInput<String> idPropertyName;
 
 	@Inject
-	@WithAttributes(label = "Methods")
+	@WithAttributes(label = "Methods to generate")
 	private UISelectMany<RestMethod> methods;
 
 	@Inject
-	@WithAttributes(label = "Generator", required = true)
+	@WithAttributes(label = "Generator", required = false)
 	private UISelectOne<ResourceClassGenerator> generator;
 
 	@Inject
@@ -109,9 +112,6 @@ public class RestResourceClassFromPojoCommand extends AbstractProjectCommand imp
 	{
 		UIContext context = builder.getUIContext();
 		Project project = getSelectedProject(context);
-		// List<JavaClassSource> supportedEntities = new ArrayList<>();
-		// targets.setValueChoices(supportedEntities);
-		// targets.setItemLabelConverter((source) -> source.getQualifiedName());
 
 		packageName.setDefaultValue(project.getFacet(JavaSourceFacet.class).getBasePackage() + ".rest");
 
@@ -142,19 +142,24 @@ public class RestResourceClassFromPojoCommand extends AbstractProjectCommand imp
 	private void setupTargetsSelector(UIContext context) {
 
 		Project project = getSelectedProject(context);
-		List<JavaResource> resourceRepresentationClasses = new ArrayList<>();
 		for(JavaResource jr: projectOperations.getProjectClasses(project)) {
 			if (jr.getName().endsWith("RR.java")) {
-				resourceRepresentationClasses.add(jr);
+				try {
+					targetMap.put(jr.getJavaType().getQualifiedName(), jr);
+				} catch (FileNotFoundException e) {
+					// this is ok, because we are using files found by
+					// projectOperations
+				}
 			}
 		}
-		targets.setValueChoices(resourceRepresentationClasses);
+		targets.setValueChoices(targetMap.keySet());
 	}
 
 	@Override
 	public void validate(UIValidationContext validator) {
 		super.validate(validator);
-		for (JavaResource t : targets.getValue()) {
+		for (String targetRRClassName : targets.getValue()) {
+			JavaResource t = targetMap.get(targetRRClassName);
 
 			// these ought to be classes (by how we created the filter list)
 			JavaClassSource c;
@@ -229,8 +234,10 @@ public class RestResourceClassFromPojoCommand extends AbstractProjectCommand imp
 	{
 		ResourceClassGenerator selectedGenerator = generator.getValue();
 		Set<JavaSource<? extends JavaSource<?>>> classes = new HashSet<>();
-		for (JavaResource target : targets.getValue())
+		for (String rrClassName : targets.getValue())
 		{
+			JavaResource target = targetMap.get(rrClassName);
+
 			context.setRrClass(target.getJavaType());
 			String resourceName = getResourceNameFrom(target.getJavaType());
 
