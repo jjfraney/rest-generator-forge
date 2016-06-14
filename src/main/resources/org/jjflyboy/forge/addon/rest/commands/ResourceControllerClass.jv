@@ -1,108 +1,91 @@
 package ${targetPackage};
 
-<#if withGET && hasIdProperty>import java.net.URI;
-</#if>import java.util.Collections;
-
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
-<#if withGET && hasIdProperty>import javax.ws.rs.core.UriBuilder;
+<#if withGET>import java.util.List;
+import java.util.stream.Collectors;
 </#if>
+import javax.enterprise.context.RequestScoped;
+import javax.inject.Inject;
 <#if hasIdProperty>import ${resourceRepresentation.qualifiedName};
+import ${keyProperty.type.qualifiedName}; 
 </#if>
-public class ${resourceName}ResourceController implements I${resourceName}ResourceController {
+/**
+ * this class maps ${resourceName} REST operations to
+ * the ${targetName} entity.
+ * // TODO: replace ${targetName} with the actual target class name.
+ */
 
+@RequestScoped
+public class Mapped${resourceName}ResourceController implements I${resourceName}ResourceController {
+
+	@Inject
+	private I${targetName}Controller targetController;
+	
+	@Inject
+	private ${resourceName}ResourceMapper resourceMapper;
+	
+	@Inject
+	private ${targetName}Mapper targetMapper;
+	
+	@Inject
+	private TransactionRunner runner;
+
+	private <T> T transactional(TransactionRunner.TransactionalBlock<T> blk) {
+		return runner.run(blk);
+	}
+	
+	
 <#if withPOST && hasIdProperty> 	@Override
-	public Response create(${resourceRepresentation.name} rro) {
-		// TODO: domain model logic to create the domain model object
-
-		// TODO: conversion: domain model object to external RRO
-
-		URI uri = UriBuilder.fromResource(${resourceName}ResourceClass.class).path(rro.get${keyPropertyName}().toString()).build();
-		return Response.created(uri).build();
+	public ${keyPropertyType} create(${resourceRepresentation.name} rro) {
+		// convert from the resource to a detached entity
+		${targetName} detached = resourceMapper.map(rro);
+		
+		// call the controller to 'create' the object
+		${resourceRepresentation.name} result = transactional( () -> {
+			${targetName} managed = targetController.create(detached);
+			
+			// map the return value to a resource representation
+			return targetMapper.map(managed);
+		});
+		return result.get${keyName?capitalize}();
 	}
 </#if>
 <#if withGET && hasIdProperty> 	@Override
-	public Response getBy${keyPropertyName}(${keyPropertyType} ${keyName}) {
+	public ${resourceRepresentation.name} get(${keyPropertyType} ${keyName}) {
 		
-		Response response;
-
-		// TODO: implement domain logic to find by this ${keyName}
-		boolean found = false;
-
-		// working, simple, thin, sample domain logic:
-		if(found) {
-			// TODO: conversion: domain model object to external RRO
-			${resourceRepresentation.name} rro = new ${resourceRepresentation.name}();
-			rro.set${keyPropertyName}(${keyName});
-
-			response = Response.ok(rro).build();
-		} else {
-			response = Response.status(Status.NOT_FOUND).build();
-		}
-		return response;
+		${resourceRepresentation.name} result = transactional(() -> {
+			${targetName} updated = targetController.findByGuid(guid);
+			return targetMapper.map(updated);
+		});
+		return result;
 	}
 </#if>
 <#if withDELETE  && hasIdProperty> 	@Override
-	public Response removeBy${keyPropertyName}(${keyPropertyType} ${keyName}) {
-
-		Response response;
-
-		// TODO: domain logic to find by this ${keyName}
-		boolean found = false;
-
-		// working, simple, thin, sample domain logic:
-		if(found) {
-			// TODO: domain logic to remove domain object
-
-			response = Response.noContent().build();
-		} else {
-			response = Response.status(Status.NOT_FOUND).build();
-		}
-		return response;
+	public void remove(${keyPropertyType} ${keyName}) {
+		targetController.remove(${keyName});
 	}
 </#if>
 
 <#if withPUT && hasIdProperty> 	@Override
-	public Response update(${keyPropertyType} ${keyName}, ${resourceRepresentation.name} rro) {
+	public ${resourceRepresentation.name} update(${keyPropertyType} ${keyName}, ${resourceRepresentation.name} rro) {
 
-		Response response;
+		${targetName} detached = resourceMapper.map(rro);
 
-		// TODO: implement domain logic to find by this ${keyName}
-		boolean found = false;
-
-		// working, simple, thin, sample domain logic:
-		if(found) {
-
-			// TODO: modify the domain model object from the rroUpdate object
-	
-			// if an optimistic lock violation
-			boolean optimisticLockViolation = false;
-			if(optimisticLockViolation) {
-				// try to return the original.
-
-				// TODO: need the original domain model object (maybe from the find above).
-				// TODO: conversion: original domain model object to external RRO
-				${resourceRepresentation.name} original = null;
-				response = Response.status(Response.Status.CONFLICT).entity(original).build();
-			} else {
-				// TODO: conversion: updated domain model object to external RRO
-				${resourceRepresentation.name} updated = new ${resourceRepresentation.name}();
-				updated.set${keyPropertyName}(${keyName});
-
-				// return successful update
-				response = Response.ok(updated).build();
-			}
-		} else {
-			response = Response.status(Status.NOT_FOUND).build();
-		}
-		return response;
+		${resourceRepresentation.name} result = transactional(() -> {
+			${targetName} updated = targetController.update(guid, detached);
+			return targetMapper.map(updated);
+		});
+		return result;
 	}</#if>
 <#if withGET>	// add get methods returning lists to I${resourceName}ResourcesClass
 	
  	@Override
-	public Response getAll(Integer startPosition, Integer maxResult) {
-		// TODO: logic to find 'matching' domain model objects
-		// TODO: conversion: domain model object to external RRO
-		return Response.status(Status.OK).entity(Collections.emptyList()).build();
+	public List<${resourceRepresentation.name}> getAll(Integer startPosition, Integer maxResult) {
+		return transactional(() -> {
+			return targetController
+					.findAll()
+					.stream()
+					.map((n) -> targetMapper.map(n))
+					.collect(Collectors.toList());
+		});
 	}
 </#if>}

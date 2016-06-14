@@ -1,8 +1,17 @@
 package ${targetPackage};
 
-interface I${resourceName}ResourceController extends I${resourceName}ResourceClass, I${resourceName}ResourcesClass {
-	/*
-	 * methods here do not have to be implemented in ${resourceName}ResourceClass,
-	 * and this interface prevents an @Inject ambiguity.
-	 */
+import java.util.List;
+<#if hasIdProperty>import ${keyProperty.type.qualifiedName};
+</#if>
+interface I${resourceName}ResourceController {
+<#if hasIdProperty>	${keyPropertyType} create(${resourceRepresentation.name} rro);
+
+	${resourceRepresentation.name} get(${keyPropertyType} ${keyName});
+
+	void remove(${keyPropertyType} ${keyName});
+
+	${resourceRepresentation.name} update(${keyPropertyType} ${keyName}, ${resourceRepresentation.name} rro);
+
+</#if>	List<${resourceRepresentation.name}> getAll(Integer startPosition, Integer maxResult);
+	 
 }

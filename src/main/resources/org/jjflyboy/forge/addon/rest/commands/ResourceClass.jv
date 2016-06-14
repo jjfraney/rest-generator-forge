@@ -1,6 +1,12 @@
 package ${targetPackage};
 
-import javax.inject.Inject;
+<#if withPOST && hasIdProperty>import java.net.URI;
+</#if><#if withGET>import java.util.List;
+</#if>
+<#if hasIdProperty>import ${keyProperty.type.qualifiedName};
+</#if>import javax.inject.Inject;
+import javax.persistence.NoResultException;
+import javax.persistence.OptimisticLockException;
 <#if (withPOST || withPUT) && hasIdProperty>import javax.ws.rs.Consumes;
 </#if><#if withDELETE && hasIdProperty>import javax.ws.rs.DELETE;
 </#if><#if withGET>import javax.ws.rs.GET;
@@ -11,9 +17,11 @@ import javax.inject.Inject;
 </#if><#if withGET>import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 </#if>import javax.ws.rs.core.Response;
-
-<#if (withPOST || withPUT) && hasIdProperty>import ${resourceRepresentation.qualifiedName};
+import javax.ws.rs.core.Response.Status;
+<#if withPOST && hasIdProperty>import javax.ws.rs.core.UriBuilder;
+</#if><#if (withPOST || withPUT) && hasIdProperty>import ${resourceRepresentation.qualifiedName};
 </#if>
+
 @Path("${resourcePath}")
 public class ${resourceName}ResourceClass implements I${resourceName}ResourceClass, I${resourceName}ResourcesClass {
 
@@ -24,15 +32,24 @@ public class ${resourceName}ResourceClass implements I${resourceName}ResourceCla
 	@Path("{${keyName}}")
  	@Produces({${contentTypes?join(", ")}})
  	@Override
-	public Response getBy${keyPropertyName}(@PathParam("${keyName}") ${keyPropertyType} ${keyName}) {
-		return resourceController.getBy${keyPropertyName}(${keyName});
+	public Response get(@PathParam("${keyName}") ${keyPropertyType} ${keyName}) {
+		Response response;
+		try {
+			${resourceRepresentation.name} rro = resourceController.get(${keyName});
+			response = Response.ok(rro).build();
+
+		} catch (NoResultException e) {
+			response = Response.status(Status.NOT_FOUND).build();
+		}
+		return response;
 	}
 
 </#if><#if withGET>	@GET
 	@Override
 	@Produces({${contentTypes?join(", ")}})
 	public Response getAll(@QueryParam("start") Integer startPosition, @QueryParam("max") Integer maxResult) {
-		return resourceController.getAll(startPosition, maxResult);
+		List<${resourceRepresentation.name}> rros = resourceController.getAll(startPosition, maxResult);
+		return Response.status(Status.OK).entity(rros).build();
 	}
 	
 	// add get methods returning lists to I${resourceName}ResourcesClass
@@ -42,24 +59,48 @@ public class ${resourceName}ResourceClass implements I${resourceName}ResourceCla
  	@Override
 	@Consumes({${contentTypes?join(", ")}})
 	public Response create(${resourceRepresentation.name} rro) {
-		return resourceController.create(rro);
+		${keyPropertyType} ${keyName} = resourceController.create(rro);
+		URI uri = UriBuilder.fromResource(this.getClass()).path(${keyName}.toString()).build();
+		return Response.created(uri).build();
 	}
 </#if>
 
 <#if withDELETE && hasIdProperty>	@DELETE
 	@Path("{${keyName}}")
  	@Override
-	public Response removeBy${keyPropertyName}(@PathParam("${keyName}") ${keyPropertyType} ${keyName}) {
-		return resourceController.removeBy${keyPropertyName}(${keyName});
+	public Response remove(@PathParam("${keyName}") ${keyPropertyType} ${keyName}) {
+		Response response;
+
+		try {
+			resourceController.remove(${keyName});
+			response = Response.noContent().build();
+		} catch (NoResultException e) {
+			response = Response.status(Status.NOT_FOUND).build();
+		}
+		return response;
 	}
 </#if>
 
 <#if withPUT && hasIdProperty>	@PUT
 	@Path("{${keyName}}")
 	@Consumes({${contentTypes?join(", ")}})
+	@Produces({${contentTypes?join(", ")}})
  	@Override
-	public Response update(@PathParam("${keyName}") ${keyPropertyType} ${keyName}, ${resourceRepresentation.name} rro) {
-		return resourceController.update(${keyName}, rro);
+	public Response update(@PathParam("${keyName}") ${keyPropertyType} ${keyName}, ${resourceRepresentation.name} rroIn) {
+		Response response;
+
+		try {
+			${resourceRepresentation.name} rroOut = resourceController.update(guid, rroIn);
+			response = Response.ok(rroOut).build();
+
+		} catch (NoResultException e) {
+			response = Response.status(Status.NOT_FOUND).build();
+
+		} catch (OptimisticLockException e) {
+			${resourceRepresentation.name} rroOut = resourceController.get(${keyName});
+			response = Response.status(Response.Status.CONFLICT).entity(rroOut).build();
+		}
+		return response;
 	}
 </#if>}
 

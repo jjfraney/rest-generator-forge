@@ -1,12 +1,19 @@
 package ${targetPackage};
 
-<#if hasIdProperty>import javax.ws.rs.core.Response;
+<#if hasIdProperty>import ${keyProperty.type.qualifiedName};
+</#if>
+<#if (withPOST || withPUT)  && hasIdProperty>import javax.validation.Valid;
+import javax.validation.groups.ConvertGroup;
+import javax.validation.groups.Default;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+</#if><#if hasIdProperty>import javax.ws.rs.core.Response;
 </#if>
 <#if (withPOST || withPUT)  && hasIdProperty>import ${resourceRepresentation.qualifiedName};
 </#if>
 interface I${resourceName}ResourceClass {
-<#if withPOST && hasIdProperty>	Response create(${resourceRepresentation.name} rro);
-</#if><#if withGET && hasIdProperty>	Response getBy${keyPropertyName}(${keyPropertyType} ${keyName});
-</#if><#if withDELETE && hasIdProperty>	Response removeBy${keyPropertyName}(${keyPropertyType} ${keyName});
-</#if><#if withPUT && hasIdProperty>	Response update(${keyPropertyType} ${keyName}, ${resourceRepresentation.name} rro);
+<#if withPOST && hasIdProperty>	Response create(@Valid @ConvertGroup(from = Default.class, to = POST.class) ${resourceRepresentation.name} rro);
+</#if><#if withGET && hasIdProperty>	Response get(${keyPropertyType} ${keyName});
+</#if><#if withDELETE && hasIdProperty>	Response remove(${keyPropertyType} ${keyName});
+</#if><#if withPUT && hasIdProperty>	Response update(@Valid @ConvertGroup(from = Default.class, to = PUT.class) ${keyPropertyType} ${keyName}, ${resourceRepresentation.name} rro);
 </#if>}

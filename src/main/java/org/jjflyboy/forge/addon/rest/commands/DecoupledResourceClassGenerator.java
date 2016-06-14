@@ -51,6 +51,7 @@ public class DecoupledResourceClassGenerator implements ResourceClassGenerator {
 		map.put("contentTypes", context.getContentTypes());
 		map.put("resourcePath", context.getResourcePath());
 		map.put("targetPackage", context.getTargetPackageName());
+		map.put("targetName", "TargetEntity");
 
 		map.put("hasIdProperty", context.getKeyName() != null);
 		if (context.getKeyName() != null) {
