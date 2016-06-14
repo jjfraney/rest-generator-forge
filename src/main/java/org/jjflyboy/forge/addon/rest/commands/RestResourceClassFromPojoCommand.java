@@ -40,7 +40,6 @@ import org.jboss.forge.addon.ui.hints.InputType;
 import org.jboss.forge.addon.ui.input.UIInput;
 import org.jboss.forge.addon.ui.input.UIInputMany;
 import org.jboss.forge.addon.ui.input.UISelectMany;
-import org.jboss.forge.addon.ui.input.UISelectOne;
 import org.jboss.forge.addon.ui.metadata.UICommandMetadata;
 import org.jboss.forge.addon.ui.metadata.WithAttributes;
 import org.jboss.forge.addon.ui.result.NavigationResult;
@@ -86,10 +85,6 @@ public class RestResourceClassFromPojoCommand extends AbstractProjectCommand imp
 	private UISelectMany<RestMethod> methods;
 
 	@Inject
-	@WithAttributes(label = "Generator", required = false)
-	private UISelectOne<ResourceClassGenerator> generator;
-
-	@Inject
 	private DecoupledResourceClassGenerator defaultResourceGenerator;
 
 	@Inject
@@ -115,22 +110,12 @@ public class RestResourceClassFromPojoCommand extends AbstractProjectCommand imp
 
 		contentTypes.setCompleter(
 				(uiContext, input, value) -> Arrays.asList(MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON));
-		generator.setDefaultValue(defaultResourceGenerator);
-		if (context.getProvider().isGUI())
-		{
-			generator.setItemLabelConverter((source) -> source.getDescription());
-		}
-		else
-		{
-			generator.setItemLabelConverter((source) -> source.getName());
-		}
 		setupTargetsSelector(context);
 
 		methods.setDefaultValue(
 				Arrays.asList(new RestMethod[] { RestMethod.GET, RestMethod.PUT, RestMethod.POST, RestMethod.DELETE }));
 
 		builder.add(targets)
-		.add(generator)
 		.add(contentTypes)
 		.add(packageName)
 		.add(idPropertyName)
@@ -230,7 +215,7 @@ public class RestResourceClassFromPojoCommand extends AbstractProjectCommand imp
 	private Set<JavaSource<? extends JavaSource<?>>> generateResourceClasses(GenerationContext context)
 			throws Exception
 	{
-		ResourceClassGenerator selectedGenerator = generator.getValue();
+		ResourceClassGenerator selectedGenerator = defaultResourceGenerator;
 		Set<JavaSource<? extends JavaSource<?>>> classes = new HashSet<>();
 		for (String rrClassName : targets.getValue())
 		{
