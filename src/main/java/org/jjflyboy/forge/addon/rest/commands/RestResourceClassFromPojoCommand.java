@@ -113,8 +113,6 @@ public class RestResourceClassFromPojoCommand extends AbstractProjectCommand imp
 		UIContext context = builder.getUIContext();
 		Project project = getSelectedProject(context);
 
-		packageName.setDefaultValue(project.getFacet(JavaSourceFacet.class).getBasePackage() + ".rest");
-
 		contentTypes.setCompleter(
 				(uiContext, input, value) -> Arrays.asList(MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON));
 		generator.setDefaultValue(defaultResourceGenerator);
