@@ -1,4 +1,4 @@
-package ${targetPackage};
+package ${outputPackage};
 
 import java.util.List;
 <#if hasIdProperty>import ${keyProperty.type.qualifiedName};

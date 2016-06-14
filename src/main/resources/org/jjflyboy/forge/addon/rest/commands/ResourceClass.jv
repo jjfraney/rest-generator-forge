@@ -1,4 +1,4 @@
-package ${targetPackage};
+package ${outputPackage};
 
 <#if withPOST && hasIdProperty>import java.net.URI;
 </#if><#if withGET>import java.util.List;

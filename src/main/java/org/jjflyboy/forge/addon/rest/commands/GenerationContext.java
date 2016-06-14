@@ -13,7 +13,7 @@ public class GenerationContext {
 	private JavaClassSource rrClass;
 	private String keyName;
 	private PropertySource<JavaClassSource> keyProperty;
-	private String targetPackageName;
+	private String outputPackageName;
 	private List<String> contentTypes;
 	private String resourcePath;
 	private String resourceName;
@@ -37,12 +37,12 @@ public class GenerationContext {
 		this.rrClass = rrClass;
 	}
 
-	public String getTargetPackageName() {
-		return targetPackageName;
+	public String getOutputPackageName() {
+		return outputPackageName;
 	}
 
-	public void setTargetPackageName(String targetPackageName) {
-		this.targetPackageName = targetPackageName;
+	public void setOutputPackageName(String outputPackageName) {
+		this.outputPackageName = outputPackageName;
 	}
 
 	public List<String> getContentTypes() {

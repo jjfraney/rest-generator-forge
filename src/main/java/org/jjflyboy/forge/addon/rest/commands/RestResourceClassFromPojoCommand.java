@@ -66,18 +66,18 @@ public class RestResourceClassFromPojoCommand extends AbstractProjectCommand imp
 	private UIInputMany<String> contentTypes;
 
 	@Inject
-	@WithAttributes(label = "targets", required = true, type = InputType.JAVA_CLASS_PICKER)
-	private UISelectMany<String> targets;
-	// due to forge bug, cannot use: private UISelectMany<JavaResource> targets;
+	@WithAttributes(label = "resources", required = true, type = InputType.JAVA_CLASS_PICKER)
+	private UISelectMany<String> resourceRepresentations;
+	// due to forge bug, cannot use: private UISelectMany<JavaResource> resourceRepresentations;
 	// using this map to compensate for the forge bug above
-	private Map<String, JavaResource> targetMap = new HashMap<>();
+	private Map<String, JavaResource> resourceMap = new HashMap<>();
 
 	@Inject
-	@WithAttributes(label = "Target Package Name", required = false, type = InputType.JAVA_PACKAGE_PICKER)
+	@WithAttributes(label = "Output Package Name", required = false, type = InputType.JAVA_PACKAGE_PICKER)
 	private UIInput<String> packageName;
 
 	@Inject
-	@WithAttributes(label = "Property name of targets' id property", required = false)
+	@WithAttributes(label = "Resource's id property name.", required = false)
 	private UIInput<String> idPropertyName;
 
 	@Inject
@@ -110,46 +110,46 @@ public class RestResourceClassFromPojoCommand extends AbstractProjectCommand imp
 
 		contentTypes.setCompleter(
 				(uiContext, input, value) -> Arrays.asList(MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON));
-		setupTargetsSelector(context);
+		setupResourcesSelector(context);
 
 		methods.setDefaultValue(
 				Arrays.asList(new RestMethod[] { RestMethod.GET, RestMethod.PUT, RestMethod.POST, RestMethod.DELETE }));
 
-		builder.add(targets)
+		builder.add(resourceRepresentations)
 		.add(contentTypes)
 		.add(packageName)
 		.add(idPropertyName)
 		.add(methods);
 	}
 
-	private void setupTargetsSelector(UIContext context) {
+	private void setupResourcesSelector(UIContext context) {
 
 		Project project = getSelectedProject(context);
 		for(JavaResource jr: projectOperations.getProjectClasses(project)) {
 			if (jr.getName().endsWith("RR.java")) {
 				try {
-					targetMap.put(jr.getJavaType().getQualifiedName(), jr);
+					resourceMap.put(jr.getJavaType().getQualifiedName(), jr);
 				} catch (FileNotFoundException e) {
 					// this is ok, because we are using files found by
 					// projectOperations
 				}
 			}
 		}
-		targets.setValueChoices(targetMap.keySet());
+		resourceRepresentations.setValueChoices(resourceMap.keySet());
 	}
 
 	@Override
 	public void validate(UIValidationContext validator) {
 		super.validate(validator);
-		for (String targetRRClassName : targets.getValue()) {
-			JavaResource t = targetMap.get(targetRRClassName);
+		for (String rrClassName : resourceRepresentations.getValue()) {
+			JavaResource t = resourceMap.get(rrClassName);
 
 			// these ought to be classes (by how we created the filter list)
 			JavaClassSource c;
 			try {
 				c = ((JavaClassSource) t.getJavaType());
 			} catch (FileNotFoundException e) {
-				validator.addValidationError(targets, "Java source file not found. " + t.getFullyQualifiedName());
+				validator.addValidationError(resourceRepresentations, "Java source file not found. " + t.getFullyQualifiedName());
 				continue;
 			}
 
@@ -157,9 +157,9 @@ public class RestResourceClassFromPojoCommand extends AbstractProjectCommand imp
 			if(idName != null) {
 				if(c.getProperty(idName) == null) {
 					String message = new StringBuilder()
-							.append("id property does not exist in the target class.")
+							.append("id property does not exist in the resource representation class.")
 							.append("  id property name=").append(idName)
-							.append(", target RR class=").append(c.getName())
+							.append(", resource representation class=").append(c.getName())
 							.toString();
 					validator.addValidationError(idPropertyName, message);
 				}
@@ -167,11 +167,11 @@ public class RestResourceClassFromPojoCommand extends AbstractProjectCommand imp
 				boolean keyFound = inferKeyName(getResourceNameFrom(c), buildPropertyMap(c)) != null;
 				if(! keyFound) {
 					String message = new StringBuilder()
-							.append("target class does not have guessable id property.")
-							.append(" target class=").append(c.getName())
+							.append("resource representation does not have guessable id property.")
+							.append(" resource representation class=").append(c.getName())
 							.append(" suggestions=").append(Arrays.asList(keyPossibilities(getResourceNameFrom(c))))
 							.toString();
-					validator.addValidationWarning(targets, message);
+					validator.addValidationWarning(resourceRepresentations, message);
 				}
 
 				if (!keyFound) {
@@ -217,14 +217,14 @@ public class RestResourceClassFromPojoCommand extends AbstractProjectCommand imp
 	{
 		ResourceClassGenerator selectedGenerator = defaultResourceGenerator;
 		Set<JavaSource<? extends JavaSource<?>>> classes = new HashSet<>();
-		for (String rrClassName : targets.getValue())
+		for (String rrClassName : resourceRepresentations.getValue())
 		{
-			JavaResource target = targetMap.get(rrClassName);
+			JavaResource rrJavaResource = resourceMap.get(rrClassName);
 
-			context.setRrClass(target.getJavaType());
-			String resourceName = getResourceNameFrom(target.getJavaType());
+			context.setRrClass(rrJavaResource.getJavaType());
+			String resourceName = getResourceNameFrom(rrJavaResource.getJavaType());
 
-			Map<String, PropertySource<JavaClassSource>> map = buildPropertyMap(target.getJavaType());
+			Map<String, PropertySource<JavaClassSource>> map = buildPropertyMap(rrJavaResource.getJavaType());
 			String keyName = inferKeyName(resourceName, map);
 
 			context.setKeyName(keyName);
@@ -335,7 +335,7 @@ public class RestResourceClassFromPojoCommand extends AbstractProjectCommand imp
 				.collect(Collectors.toList());
 
 		generationContext.setContentTypes(ct);
-		generationContext.setTargetPackageName(packageName.getValue());
+		generationContext.setOutputPackageName(packageName.getValue());
 		generationContext.setInflector(inflector);
 
 		Set<RestMethod> m = new HashSet<>();

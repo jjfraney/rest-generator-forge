@@ -1,4 +1,4 @@
-package ${targetPackage};
+package ${outputPackage};
 
 <#if withGET>import java.util.List;
 import java.util.stream.Collectors;

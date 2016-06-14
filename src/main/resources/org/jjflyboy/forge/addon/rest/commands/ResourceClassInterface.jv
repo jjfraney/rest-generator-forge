@@ -1,4 +1,4 @@
-package ${targetPackage};
+package ${outputPackage};
 
 <#if hasIdProperty>import ${keyProperty.type.qualifiedName};
 </#if>

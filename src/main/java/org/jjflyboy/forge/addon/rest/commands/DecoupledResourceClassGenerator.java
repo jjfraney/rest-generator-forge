@@ -51,11 +51,11 @@ public class DecoupledResourceClassGenerator implements ResourceClassGenerator {
 		map.put("contentTypes", context.getContentTypes());
 		map.put("resourcePath", context.getResourcePath());
 
-		String targetPackageName = context.getTargetPackageName();
-		if (targetPackageName == null) {
-			targetPackageName = context.getRrClass().getPackage();
+		String outputPackageName = context.getOutputPackageName();
+		if (outputPackageName == null) {
+			outputPackageName = context.getRrClass().getPackage();
 		}
-		map.put("targetPackage", targetPackageName);
+		map.put("outputPackage", outputPackageName);
 
 		map.put("targetName", "TargetEntity");
 
