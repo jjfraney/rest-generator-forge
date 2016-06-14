@@ -18,6 +18,7 @@ public class GenerationContext {
 	private String resourcePath;
 	private String resourceName;
 	private Set<RestMethod> methods;
+	private String domainClassName;
 
 	private Inflector inflector;
 
@@ -99,6 +100,14 @@ public class GenerationContext {
 
 	public void setMethods(Set<RestMethod> methods) {
 		this.methods = methods;
+	}
+
+	public String getDomainClassName() {
+		return domainClassName;
+	}
+
+	public void setDomainClassName(String domainClassName) {
+		this.domainClassName = domainClassName;
 	}
 
 }

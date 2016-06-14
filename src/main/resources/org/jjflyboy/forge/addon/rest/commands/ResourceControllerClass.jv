@@ -10,21 +10,20 @@ import ${keyProperty.type.qualifiedName};
 </#if>
 /**
  * this class maps ${resourceName} REST operations to
- * the ${targetName} entity.
- * // TODO: replace ${targetName} with the actual target class name.
+ * the ${domainClassName} pojo.
  */
 
 @RequestScoped
 public class Mapped${resourceName}ResourceController implements I${resourceName}ResourceController {
 
 	@Inject
-	private I${targetName}Controller targetController;
+	private I${domainClassName}Controller ${domainClassName?uncap_first}Controller;
 	
 	@Inject
 	private ${resourceName}ResourceMapper resourceMapper;
 	
 	@Inject
-	private ${targetName}Mapper targetMapper;
+	private ${domainClassName}Mapper ${domainClassName?uncap_first}Mapper;
 	
 	@Inject
 	private TransactionRunner runner;
@@ -36,15 +35,15 @@ public class Mapped${resourceName}ResourceController implements I${resourceName}
 	
 <#if withPOST && hasIdProperty> 	@Override
 	public ${keyPropertyType} create(${resourceRepresentation.name} rro) {
-		// convert from the resource to a detached entity
-		${targetName} detached = resourceMapper.map(rro);
+		// convert from the resource to the input domain object
+		${domainClassName} input${domainClassName} = resourceMapper.map(rro);
 		
 		// call the controller to 'create' the object
 		${resourceRepresentation.name} result = transactional( () -> {
-			${targetName} managed = targetController.create(detached);
+			${domainClassName} created = ${domainClassName?uncap_first}Controller.create(input${domainClassName});
 			
 			// map the return value to a resource representation
-			return targetMapper.map(managed);
+			return ${domainClassName?uncap_first}Mapper.map(created);
 		});
 		return result.get${keyName?capitalize}();
 	}
@@ -53,26 +52,26 @@ public class Mapped${resourceName}ResourceController implements I${resourceName}
 	public ${resourceRepresentation.name} get(${keyPropertyType} ${keyName}) {
 		
 		${resourceRepresentation.name} result = transactional(() -> {
-			${targetName} updated = targetController.findByGuid(guid);
-			return targetMapper.map(updated);
+			${domainClassName} ${domainClassName?uncap_first} = ${domainClassName?uncap_first}Controller.findByGuid(guid);
+			return ${domainClassName?uncap_first}Mapper.map(${domainClassName?uncap_first});
 		});
 		return result;
 	}
 </#if>
 <#if withDELETE  && hasIdProperty> 	@Override
 	public void remove(${keyPropertyType} ${keyName}) {
-		targetController.remove(${keyName});
+		${domainClassName?uncap_first}Controller.remove(${keyName});
 	}
 </#if>
 
 <#if withPUT && hasIdProperty> 	@Override
 	public ${resourceRepresentation.name} update(${keyPropertyType} ${keyName}, ${resourceRepresentation.name} rro) {
 
-		${targetName} detached = resourceMapper.map(rro);
+		${domainClassName} input${domainClassName} = resourceMapper.map(rro);
 
 		${resourceRepresentation.name} result = transactional(() -> {
-			${targetName} updated = targetController.update(guid, detached);
-			return targetMapper.map(updated);
+			${domainClassName} updated = ${domainClassName?uncap_first}Controller.update(guid, input${domainClassName});
+			return ${domainClassName?uncap_first}Mapper.map(updated);
 		});
 		return result;
 	}</#if>
@@ -81,10 +80,10 @@ public class Mapped${resourceName}ResourceController implements I${resourceName}
  	@Override
 	public List<${resourceRepresentation.name}> getAll(Integer startPosition, Integer maxResult) {
 		return transactional(() -> {
-			return targetController
+			return ${domainClassName?uncap_first}Controller
 					.findAll()
 					.stream()
-					.map((n) -> targetMapper.map(n))
+					.map((n) -> ${domainClassName?uncap_first}Mapper.map(n))
 					.collect(Collectors.toList());
 		});
 	}

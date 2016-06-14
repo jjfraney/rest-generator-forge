@@ -77,6 +77,10 @@ public class RestResourceClassFromPojoCommand extends AbstractProjectCommand imp
 	private UIInput<String> packageName;
 
 	@Inject
+	@WithAttributes(label = "Domain class name", required = false)
+	private UIInput<String> domainClassName;
+
+	@Inject
 	@WithAttributes(label = "Resource's id property name.", required = false)
 	private UIInput<String> idPropertyName;
 
@@ -119,6 +123,7 @@ public class RestResourceClassFromPojoCommand extends AbstractProjectCommand imp
 		.add(contentTypes)
 		.add(packageName)
 		.add(idPropertyName)
+		.add(domainClassName)
 		.add(methods);
 	}
 
@@ -337,6 +342,7 @@ public class RestResourceClassFromPojoCommand extends AbstractProjectCommand imp
 		generationContext.setContentTypes(ct);
 		generationContext.setOutputPackageName(packageName.getValue());
 		generationContext.setInflector(inflector);
+		generationContext.setDomainClassName(domainClassName.getValue());
 
 		Set<RestMethod> m = new HashSet<>();
 		m.addAll(Lists.toList(methods.getValue()));
